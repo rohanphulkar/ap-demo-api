@@ -1,12 +1,12 @@
 const Appointment = require("../models/Appointment");
 const { sendEmail } = require("../utils/sendEmail");
-const Razorpay = require('razorpay');
-const crypto = require('crypto');
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
 // Get appointments with filters, search and pagination
@@ -73,7 +73,7 @@ exports.bookAppointment = async (req, res) => {
     // Validate required fields
     const requiredFields = [
       "name",
-      "email", 
+      "email",
       "phone",
       "testType",
       "appointmentDate",
@@ -109,7 +109,7 @@ exports.bookAppointment = async (req, res) => {
       pet: 15000,
       angiography: 12000,
       fluoroscopy: 4000,
-      nuclear: 10000
+      nuclear: 10000,
     };
 
     if (!testPrices[req.body.testType]) {
@@ -143,9 +143,9 @@ exports.bookAppointment = async (req, res) => {
     // Create Razorpay order
     const order = await razorpay.orders.create({
       amount: amount * 100, // Amount in paise
-      currency: 'INR',
-      receipt: 'order_' + Date.now(),
-      payment_capture: 1
+      currency: "INR",
+      receipt: "order_" + Date.now(),
+      payment_capture: 1,
     });
 
     // Create and save appointment
@@ -159,7 +159,7 @@ exports.bookAppointment = async (req, res) => {
       status: "pending",
       amount: amount,
       orderId: order.id,
-      paymentStatus: "pending"
+      paymentStatus: "pending",
     });
 
     const savedAppointment = await appointment.save();
@@ -169,8 +169,8 @@ exports.bookAppointment = async (req, res) => {
       order: {
         id: order.id,
         amount: order.amount,
-        currency: order.currency
-      }
+        currency: order.currency,
+      },
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -203,38 +203,63 @@ exports.verifyPayment = async (req, res) => {
     appointment.paymentId = paymentId;
     const confirmedAppointment = await appointment.save();
 
-    // Send confirmation email
+    // Send confirmation email with improved styling
     const html = `
-        <h1>Appointment Confirmation</h1>
-        <p>Dear ${appointment.name},</p>
-        <p>Your appointment has been confirmed and payment has been received successfully.</p>
-        <p>Details:</p>
-        <ul>
-          <li>Test Type: ${appointment.testType}</li>
-          <li>Date: ${appointment.appointmentDate.toLocaleDateString()}</li>
-          <li>Time: ${appointment.appointmentDate.toLocaleTimeString()}</li>
-          <li>Amount Paid: ₹${appointment.amount}</li>
-          <li>Payment ID: ${paymentId}</li>
-        </ul>
-        <p>Important Instructions:</p>
-        <ul>
-          <li>Please arrive 15 minutes before your appointment time</li>
-          <li>Bring any previous medical records related to this test</li>
-          <li>Bring a valid ID proof</li>
-          <li>Follow any specific preparation instructions for your test type</li>
-        </ul>
-        <p>If you need to cancel or reschedule, please contact us at least 24 hours before your appointment.</p>
-        <p>Contact Information:</p>
-        <ul>
-          <li>Phone: ${process.env.CONTACT_PHONE}</li>
-          <li>Email: ${process.env.CONTACT_EMAIL}</li>
-        </ul>
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #333;">
+        <div style="background-color: #4CAF50; padding: 20px; text-align: center;">
+          <h1 style="color: white; margin: 0;">Appointment Confirmation</h1>
+        </div>
+        
+        <div style="padding: 20px; background-color: #f9f9f9; border-radius: 5px; margin-top: 20px;">
+          <p style="font-size: 16px;">Dear <strong>${
+            appointment.name
+          }</strong>,</p>
+          <p style="font-size: 16px;">Your appointment has been confirmed and payment has been received successfully.</p>
+          
+          <div style="background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="color: #4CAF50; margin-top: 0;">Appointment Details</h2>
+            <ul style="list-style: none; padding: 0;">
+              <li style="margin: 10px 0;"><strong>Test Type:</strong> ${
+                appointment.testType
+              }</li>
+              <li style="margin: 10px 0;"><strong>Date:</strong> ${appointment.appointmentDate.toLocaleDateString()}</li>
+              <li style="margin: 10px 0;"><strong>Time:</strong> ${appointment.appointmentDate.toLocaleTimeString()}</li>
+              <li style="margin: 10px 0;"><strong>Amount Paid:</strong> ₹${
+                appointment.amount
+              }</li>
+              <li style="margin: 10px 0;"><strong>Payment ID:</strong> ${paymentId}</li>
+            </ul>
+          </div>
+
+          <div style="background-color: #fff3cd; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="color: #856404; margin-top: 0;">Important Instructions</h2>
+            <ul style="list-style: none; padding: 0;">
+              <li style="margin: 10px 0;">✓ Please arrive 15 minutes before your appointment time</li>
+              <li style="margin: 10px 0;">✓ Bring any previous medical records related to this test</li>
+              <li style="margin: 10px 0;">✓ Bring a valid ID proof</li>
+              <li style="margin: 10px 0;">✓ Follow any specific preparation instructions for your test type</li>
+            </ul>
+          </div>
+
+          <p style="font-size: 14px; color: #666;">If you need to cancel or reschedule, please contact us at least 24 hours before your appointment.</p>
+
+          <div style="background-color: #e9ecef; padding: 20px; border-radius: 5px; margin-top: 20px;">
+            <h2 style="color: #495057; margin-top: 0;">Contact Information</h2>
+            <p style="margin: 5px 0;">📞 Phone: ${process.env.CONTACT_PHONE}</p>
+            <p style="margin: 5px 0;">📧 Email: ${process.env.CONTACT_EMAIL}</p>
+          </div>
+        </div>
+        
+        <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
+          <p>This is an automated email. Please do not reply to this message.</p>
+        </div>
+      </div>
     `;
 
     await sendEmail({
       to: appointment.email,
       subject: "Appointment Confirmation - Payment Received",
-      html
+      html,
     });
 
     res.status(200).json(confirmedAppointment);
@@ -254,28 +279,49 @@ exports.cancelAppointment = async (req, res) => {
     appointment.status = "cancelled";
     const updatedAppointment = await appointment.save();
 
-    // Send cancellation email
+    // Send cancellation email with improved styling
     const html = `
-        <h1>Appointment Cancelled</h1>
-        <p>Dear ${appointment.name},</p>
-        <p>Your appointment has been cancelled.</p>
-        <p>Cancelled appointment details:</p>
-        <ul>
-          <li>Test Type: ${appointment.testType}</li>
-          <li>Date: ${new Date(
-            appointment.appointmentDate
-          ).toLocaleDateString()}</li>
-          <li>Time: ${new Date(
-            appointment.appointmentDate
-          ).toLocaleTimeString()}</li>
-        </ul>
-        <p>If you wish to reschedule, please book a new appointment.</p>
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #333;">
+        <div style="background-color: #dc3545; padding: 20px; text-align: center;">
+          <h1 style="color: white; margin: 0;">Appointment Cancelled</h1>
+        </div>
+        
+        <div style="padding: 20px; background-color: #f9f9f9; border-radius: 5px; margin-top: 20px;">
+          <p style="font-size: 16px;">Dear <strong>${
+            appointment.name
+          }</strong>,</p>
+          <p style="font-size: 16px;">Your appointment has been cancelled.</p>
+          
+          <div style="background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="color: #dc3545; margin-top: 0;">Cancelled Appointment Details</h2>
+            <ul style="list-style: none; padding: 0;">
+              <li style="margin: 10px 0;"><strong>Test Type:</strong> ${
+                appointment.testType
+              }</li>
+              <li style="margin: 10px 0;"><strong>Date:</strong> ${new Date(
+                appointment.appointmentDate
+              ).toLocaleDateString()}</li>
+              <li style="margin: 10px 0;"><strong>Time:</strong> ${new Date(
+                appointment.appointmentDate
+              ).toLocaleTimeString()}</li>
+            </ul>
+          </div>
+
+          <p style="font-size: 16px; text-align: center; margin-top: 20px;">
+            If you wish to reschedule, please book a new appointment.
+          </p>
+        </div>
+        
+        <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
+          <p>This is an automated email. Please do not reply to this message.</p>
+        </div>
+      </div>
     `;
 
     await sendEmail({
       to: appointment.email,
       subject: "Appointment Cancellation",
-      html
+      html,
     });
 
     res.status(200).json(updatedAppointment);
